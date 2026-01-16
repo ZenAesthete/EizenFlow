@@ -4,12 +4,16 @@ import { Task, MatrixTab } from './types';
 import { Matrix } from './components/Matrix';
 import { TaskForm } from './components/TaskForm';
 import { GraphView } from './components/GraphView';
+import { StatsView } from './components/StatsView';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import { pushToCloud, pullFromCloud, generateSyncKey } from './utils/sync';
 import { 
   Plus, LayoutGrid, Search, Zap, Moon, Sun, 
   ScatterChart, RefreshCw, Check, Cloud, Layers,
-  List
+  List,
+  Home,
+  BarChart3,
+  PieChart
 } from 'lucide-react';
 import { cn } from './utils/cn';
 
@@ -34,8 +38,8 @@ export default function App() {
   });
   
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const [viewMode, setViewMode] = useState<'matrix' | 'graph'>('matrix');
-  const [activeTab, setActiveTab] = useState<MatrixTab>('matrix'); // Default to matrix for structure
+  // Replaced simple viewMode with specific navigation state
+  const [currentView, setCurrentView] = useState<'matrix' | 'list' | 'graph' | 'stats'>('matrix');
 
   useEffect(() => {
     const savedTasks = localStorage.getItem(STORAGE_KEY);
@@ -49,7 +53,7 @@ export default function App() {
       try {
         const prefs = JSON.parse(savedPrefs);
         if (prefs.theme) setTheme(prefs.theme);
-        if (prefs.viewMode) setViewMode(prefs.viewMode);
+        if (prefs.currentView) setCurrentView(prefs.currentView);
       } catch (e) { console.error(e); }
     } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
       setTheme('dark');
@@ -61,8 +65,8 @@ export default function App() {
   }, [tasks]);
 
   useEffect(() => {
-    localStorage.setItem(PREFS_KEY, JSON.stringify({ theme, viewMode }));
-  }, [theme, viewMode]);
+    localStorage.setItem(PREFS_KEY, JSON.stringify({ theme, currentView }));
+  }, [theme, currentView]);
 
   useEffect(() => {
     if (theme === 'dark') document.documentElement.classList.add('dark');
@@ -158,119 +162,162 @@ export default function App() {
     t.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const TAB_ITEMS: { id: MatrixTab, label: string, icon?: React.ElementType }[] = [
-      { id: 'matrix', label: 'Matrix', icon: LayoutGrid },
-      { id: 'all', label: 'All Tasks', icon: List },
-      { id: 'do', label: 'Do First' },
-      { id: 'schedule', label: 'Schedule' },
-      { id: 'delegate', label: 'Delegate' },
-      { id: 'eliminate', label: 'Eliminate' },
-  ];
+  const NAV_ITEMS = [
+    { id: 'matrix', label: 'Matrix', icon: LayoutGrid },
+    { id: 'list', label: 'Tasks', icon: List },
+    { id: 'graph', label: 'Graph', icon: ScatterChart },
+    { id: 'stats', label: 'Stats', icon: PieChart },
+  ] as const;
 
   return (
-    <div className="h-screen max-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans flex flex-col overflow-hidden transition-colors duration-300">
-      <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-4 py-3 flex items-center justify-between shrink-0 shadow-sm z-20 transition-colors">
-        <div className="flex items-center gap-2 cursor-pointer select-none group" onClick={() => setViewMode(v => v === 'matrix' ? 'graph' : 'matrix')}>
-            <div className="bg-indigo-600 dark:bg-indigo-500 p-1.5 rounded-lg text-white shadow-md group-hover:bg-indigo-700 transition-colors">
+    <div className="h-[100dvh] w-full bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans flex flex-col md:flex-row overflow-hidden transition-colors duration-300">
+      
+      {/* DESKTOP SIDEBAR */}
+      <aside className="hidden md:flex flex-col w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shrink-0 z-30">
+        <div className="p-6 flex items-center gap-2">
+            <div className="bg-indigo-600 dark:bg-indigo-500 p-1.5 rounded-lg text-white shadow-md">
                 <Zap size={20} fill="currentColor" />
             </div>
-            <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white hidden sm:block">
+            <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
                 Eisen<span className="text-indigo-600 dark:text-indigo-400">Flow</span>
             </h1>
         </div>
 
-        <div className="flex-1 max-w-sm sm:max-w-md mx-4">
-            <div className="relative group">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 group-focus-within:text-indigo-500 transition-colors" size={18} />
-                <input 
-                    type="text" 
-                    placeholder="Search..." 
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-full py-2 pl-10 pr-4 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:bg-white dark:focus:bg-slate-900 outline-none"
-                />
-            </div>
-        </div>
-
-        <div className="flex items-center gap-1 sm:gap-2">
-            <button 
-              onClick={() => setShowSyncModal(true)} 
+        <nav className="flex-1 px-4 space-y-1">
+          {NAV_ITEMS.map(item => (
+            <button
+              key={item.id}
+              onClick={() => setCurrentView(item.id)}
               className={cn(
-                "p-2 rounded-lg transition-all relative",
-                syncKey ? "text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20" : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
+                currentView === item.id 
+                  ? "bg-slate-100 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400" 
+                  : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800/50"
               )}
-              title="Cloud Sync"
             >
-              <RefreshCw size={18} className={cn(isSyncing && "animate-spin")} />
-              {syncKey && <span className="absolute top-1 right-1 w-2 h-2 bg-emerald-500 rounded-full border border-white dark:border-slate-900" />}
+              <item.icon size={18} />
+              {item.label}
             </button>
+          ))}
+        </nav>
 
-            <button onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')} className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">{theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}</button>
-            <button onClick={() => setViewMode(v => v === 'matrix' ? 'graph' : 'matrix')} className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg hidden sm:block">{viewMode === 'matrix' ? <ScatterChart size={20} /> : <LayoutGrid size={20} />}</button>
-            <button onClick={() => { setEditingTask(undefined); setIsFormOpen(true); }} className="hidden sm:flex bg-slate-900 dark:bg-indigo-600 hover:bg-slate-800 text-white rounded-lg px-4 py-2 items-center gap-2 shadow-lg active:scale-95 transition-all"><Plus size={20} /><span className="font-medium">Add</span></button>
+        <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
+           <button 
+             onClick={() => setShowSyncModal(true)}
+             className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+           >
+             <RefreshCw size={18} className={cn(isSyncing && "animate-spin")} />
+             Sync
+           </button>
+           <button 
+             onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')}
+             className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+           >
+             {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+             {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
+           </button>
         </div>
+      </aside>
+
+      {/* MOBILE HEADER */}
+      <header className="md:hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 py-3 flex items-center justify-between sticky top-0 z-20">
+         <div className="flex items-center gap-2">
+            <div className="bg-indigo-600 dark:bg-indigo-500 p-1 rounded-md text-white">
+                <Zap size={16} fill="currentColor" />
+            </div>
+            <h1 className="text-lg font-bold tracking-tight">EisenFlow</h1>
+         </div>
+         <div className="flex items-center gap-2">
+             <button onClick={() => setShowSyncModal(true)} className="p-2 text-slate-500"><RefreshCw size={18} className={cn(isSyncing && "animate-spin")} /></button>
+             <button onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')} className="p-2 text-slate-500">{theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}</button>
+         </div>
       </header>
 
-      <main className="flex-1 relative flex flex-col md:flex-row p-2 md:p-6 gap-4 min-h-0">
+      {/* MAIN CONTENT AREA */}
+      <main className="flex-1 flex flex-col min-w-0 relative">
+        {/* Search Bar (Global) */}
+        {currentView !== 'stats' && (
+          <div className="p-4 md:p-6 pb-2">
+             <div className="relative max-w-xl">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={16} />
+                  <input 
+                      type="text" 
+                      placeholder="Search tasks..." 
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none shadow-sm"
+                  />
+              </div>
+          </div>
+        )}
         
-        {/* Navigation Tabs (Responsive) */}
-        {viewMode === 'matrix' && (
-            <div className="shrink-0 md:h-full">
-                {/* Mobile Tab Scroll */}
-                <div className="md:hidden flex gap-1 p-1 bg-slate-200/50 dark:bg-slate-800/50 rounded-xl overflow-x-auto no-scrollbar mb-2">
-                    {TAB_ITEMS.map(tab => (
-                        <button 
-                            key={tab.id} 
-                            onClick={() => setActiveTab(tab.id)} 
-                            className={cn(
-                                "flex-1 whitespace-nowrap py-2 px-3 rounded-lg text-xs font-bold uppercase tracking-wide transition-all flex items-center justify-center gap-1.5", 
-                                activeTab === tab.id ? "bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm" : "text-slate-500"
-                            )}
-                        >
-                            {tab.icon && <tab.icon size={14} />}
-                            {tab.label}
-                        </button>
-                    ))}
-                </div>
-
-                 {/* Desktop Vertical/Horizontal Tabs (As Toolbar) */}
-                 <div className="hidden md:flex flex-col gap-2 p-1 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-800 h-fit">
-                    {TAB_ITEMS.map(tab => (
-                         <button 
-                            key={tab.id} 
-                            onClick={() => setActiveTab(tab.id)} 
-                            className={cn(
-                                "px-3 py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-all flex items-center gap-2 w-full text-left", 
-                                activeTab === tab.id 
-                                    ? "bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm border border-slate-200 dark:border-slate-700" 
-                                    : "text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800"
-                            )}
-                        >
-                            {tab.icon ? <tab.icon size={16} /> : <div className="w-4" />}
-                            {tab.label}
-                        </button>
-                    ))}
-                 </div>
+        {/* Stats Title Header */}
+        {currentView === 'stats' && (
+            <div className="p-6 pb-2">
+                 <h2 className="text-2xl font-bold dark:text-white">Your Insights</h2>
+                 <p className="text-slate-500 text-sm">Track your progress and productivity metrics.</p>
             </div>
         )}
 
-        <div className="flex-1 h-full min-h-0 relative">
-            {viewMode === 'matrix' ? (
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 pt-2 pb-24 md:pb-6">
+            {currentView === 'matrix' && (
                 <Matrix 
                     tasks={filteredTasks} 
                     onToggle={toggleTask} 
                     onDelete={requestDeleteTask} 
                     onEdit={(t) => {setEditingTask(t); setIsFormOpen(true);}} 
                     onAddNew={() => setIsFormOpen(true)} 
-                    currentTab={activeTab} 
+                    viewMode="matrix" // Pass mode explicitly
                 />
-            ) : (
+            )}
+            {currentView === 'list' && (
+                 <Matrix 
+                    tasks={filteredTasks} 
+                    onToggle={toggleTask} 
+                    onDelete={requestDeleteTask} 
+                    onEdit={(t) => {setEditingTask(t); setIsFormOpen(true);}} 
+                    onAddNew={() => setIsFormOpen(true)} 
+                    viewMode="all" // Reuse Matrix component in 'all' mode
+                />
+            )}
+            {currentView === 'graph' && (
                 <GraphView tasks={filteredTasks.filter(t => !t.completed)} onEdit={(t) => {setEditingTask(t); setIsFormOpen(true);}} />
+            )}
+             {currentView === 'stats' && (
+                <StatsView tasks={tasks} />
             )}
         </div>
       </main>
 
-      <button onClick={() => { setEditingTask(undefined); setIsFormOpen(true); }} className="sm:hidden absolute bottom-6 right-6 z-30 w-14 h-14 bg-indigo-600 text-white rounded-full shadow-xl flex items-center justify-center active:scale-90 transition-transform"><Plus size={28} /></button>
+      {/* MOBILE BOTTOM NAVIGATION */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 pb-safe z-30">
+        <div className="flex items-center justify-around p-1">
+           {NAV_ITEMS.map(item => (
+             <button
+                key={item.id}
+                onClick={() => setCurrentView(item.id as any)}
+                className={cn(
+                  "flex flex-col items-center gap-1 p-2 rounded-xl flex-1 transition-all",
+                  currentView === item.id 
+                    ? "text-indigo-600 dark:text-indigo-400" 
+                    : "text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800"
+                )}
+             >
+               <item.icon size={20} strokeWidth={currentView === item.id ? 2.5 : 2} />
+               <span className="text-[10px] font-medium">{item.label}</span>
+             </button>
+           ))}
+        </div>
+      </nav>
+
+      {/* FLOATING ACTION BUTTON */}
+      <button 
+        onClick={() => { setEditingTask(undefined); setIsFormOpen(true); }} 
+        className="fixed z-40 right-4 bottom-20 md:bottom-8 md:right-8 w-14 h-14 bg-indigo-600 dark:bg-indigo-500 hover:bg-indigo-700 dark:hover:bg-indigo-600 text-white rounded-full shadow-xl shadow-indigo-600/30 flex items-center justify-center active:scale-95 transition-all"
+        aria-label="Add Task"
+      >
+        <Plus size={28} />
+      </button>
       
       {isFormOpen && (
         <TaskForm 
@@ -284,32 +331,31 @@ export default function App() {
       <ConfirmDialog 
         isOpen={deleteConfirmState.isOpen}
         title="Delete Task?"
-        message="Are you sure you want to delete this task? This action cannot be undone."
+        message="Are you sure you want to delete this task?"
         onConfirm={confirmDeleteTask}
         onCancel={cancelDeleteTask}
       />
 
       {showSyncModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl shadow-2xl p-6 space-y-6">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-in fade-in">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-3xl shadow-2xl p-6 space-y-6">
             <div className="flex justify-between items-start">
               <div className="space-y-1">
-                <h3 className="text-xl font-bold flex items-center gap-2">
+                <h3 className="text-xl font-bold flex items-center gap-2 dark:text-white">
                   <Cloud className="text-indigo-500" /> Cloud Sync
                 </h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400">Sync tasks across your devices without an account.</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Sync tasks across your devices anonymously.</p>
               </div>
-              <button onClick={() => setShowSyncModal(false)} className="text-slate-400 hover:text-slate-600"><Plus className="rotate-45" /></button>
             </div>
 
             <div className="space-y-4">
-              <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Your Secret Sync Key</label>
+              <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Your Sync Key</label>
                 <div className="flex items-center justify-between gap-2">
-                  <code className="text-lg font-mono font-bold text-indigo-600 dark:text-indigo-400">
-                    {syncKey || 'No Key Generated'}
+                  <code className="text-base font-mono font-bold text-indigo-600 dark:text-indigo-400 select-all">
+                    {syncKey || 'No Key'}
                   </code>
-                  <button onClick={handleSync} disabled={isSyncing} className="p-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+                  <button onClick={handleSync} disabled={isSyncing} className="p-2 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 rounded-lg hover:bg-indigo-200 disabled:opacity-50">
                     {lastSyncStatus === 'success' ? <Check size={18} /> : <RefreshCw size={18} className={isSyncing ? "animate-spin" : ""} />}
                   </button>
                 </div>
@@ -318,15 +364,15 @@ export default function App() {
               <div className="flex gap-2">
                 <input 
                   type="text" 
-                  placeholder="Enter Sync Key"
-                  className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="Paste Key here..."
+                  className="flex-1 bg-slate-100 dark:bg-slate-800 border-none rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
                   onKeyDown={(e) => { if (e.key === 'Enter') pullSync((e.target as HTMLInputElement).value); }}
                 />
-                <button onClick={(e) => { const input = (e.currentTarget.previousSibling as HTMLInputElement); pullSync(input.value); }} className="bg-slate-900 dark:bg-slate-700 text-white px-3 py-2 rounded-lg text-sm font-medium">Link</button>
+                <button onClick={(e) => { const input = (e.currentTarget.previousSibling as HTMLInputElement); pullSync(input.value); }} className="bg-slate-900 dark:bg-slate-700 text-white px-4 py-2 rounded-xl text-sm font-bold">Link</button>
               </div>
             </div>
 
-            <button onClick={() => setShowSyncModal(false)} className="w-full py-2.5 text-slate-500 font-medium hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">Done</button>
+            <button onClick={() => setShowSyncModal(false)} className="w-full py-3 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-200 transition-colors">Done</button>
           </div>
         </div>
       )}
