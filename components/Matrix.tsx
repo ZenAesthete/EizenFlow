@@ -22,36 +22,40 @@ const QUADRANTS: QuadrantDef[] = [
     label: 'Do First',
     description: 'Urgent & Important',
     color: 'bg-rose-100 dark:bg-rose-900/30',
-    bg: 'bg-rose-50/50 dark:bg-rose-900/10',
+    bg: 'bg-rose-50 dark:bg-rose-900/10',
     borderColor: 'border-rose-200 dark:border-rose-900/30',
-    textColor: 'text-rose-800 dark:text-rose-300'
+    activeBorderColor: 'border-rose-500 ring-rose-500',
+    textColor: 'text-rose-700 dark:text-rose-300'
   },
   {
     id: 'schedule',
     label: 'Schedule',
     description: 'Not Urgent & Important',
     color: 'bg-sky-100 dark:bg-sky-900/30',
-    bg: 'bg-sky-50/50 dark:bg-sky-900/10',
+    bg: 'bg-sky-50 dark:bg-sky-900/10',
     borderColor: 'border-sky-200 dark:border-sky-900/30',
-    textColor: 'text-sky-800 dark:text-sky-300'
+    activeBorderColor: 'border-sky-500 ring-sky-500',
+    textColor: 'text-sky-700 dark:text-sky-300'
   },
   {
     id: 'delegate',
     label: 'Delegate',
     description: 'Urgent & Not Important',
     color: 'bg-amber-100 dark:bg-amber-900/30',
-    bg: 'bg-amber-50/50 dark:bg-amber-900/10',
+    bg: 'bg-amber-50 dark:bg-amber-900/10',
     borderColor: 'border-amber-200 dark:border-amber-900/30',
-    textColor: 'text-amber-800 dark:text-amber-300'
+    activeBorderColor: 'border-amber-500 ring-amber-500',
+    textColor: 'text-amber-700 dark:text-amber-300'
   },
   {
     id: 'eliminate',
     label: 'Eliminate',
     description: 'Not Urgent & Not Important',
     color: 'bg-slate-100 dark:bg-slate-800/50',
-    bg: 'bg-slate-50/50 dark:bg-slate-800/20',
+    bg: 'bg-slate-50 dark:bg-slate-800/20',
     borderColor: 'border-slate-200 dark:border-slate-700',
-    textColor: 'text-slate-800 dark:text-slate-400'
+    activeBorderColor: 'border-slate-400 ring-slate-400',
+    textColor: 'text-slate-700 dark:text-slate-400'
   }
 ];
 
@@ -225,6 +229,8 @@ export const Matrix: React.FC<MatrixProps> = ({ tasks, onToggle, onDelete, onEdi
   }
 
   // --- VIEW: MATRIX ---
+  const activeQuadDef = QUADRANTS.find(q => q.id === mobileQuadrant);
+
   return (
     <div className="h-full flex flex-col">
         {/* MOBILE: Segmented Control & Full List */}
@@ -240,7 +246,7 @@ export const Matrix: React.FC<MatrixProps> = ({ tasks, onToggle, onDelete, onEdi
                             className={cn(
                                 "flex flex-col items-start p-3 rounded-xl border transition-all duration-200 relative overflow-hidden",
                                 isActive 
-                                    ? "bg-white dark:bg-slate-800 border-indigo-500 shadow-md ring-1 ring-indigo-500" 
+                                    ? cn("bg-white dark:bg-slate-800 shadow-md ring-1", q.activeBorderColor) 
                                     : "bg-white/50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-800"
                             )}
                         >
@@ -254,18 +260,30 @@ export const Matrix: React.FC<MatrixProps> = ({ tasks, onToggle, onDelete, onEdi
             </div>
 
             <div className="flex-1 overflow-y-auto">
-                 <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 min-h-[50vh] shadow-sm border border-slate-100 dark:border-slate-800/50">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-bold flex items-center gap-2 dark:text-white">
-                            {QUADRANTS.find(q => q.id === mobileQuadrant)?.label}
-                            <span className="text-slate-400 text-sm font-normal">Tasks</span>
+                 <div className={cn(
+                    "bg-white dark:bg-slate-900 rounded-2xl min-h-[50vh] shadow-sm border overflow-hidden",
+                    // Use standard border for container, but could optionally use colored border if desired.
+                    // Sticking to slate to prevent visual overload, but header inside will be colored.
+                    "border-slate-200 dark:border-slate-800/50"
+                 )}>
+                    <div className={cn(
+                        "px-5 py-4 flex items-center justify-between border-b",
+                        activeQuadDef?.bg,
+                        activeQuadDef?.borderColor
+                    )}>
+                        <h3 className={cn("text-lg font-bold flex items-center gap-2", activeQuadDef?.textColor)}>
+                            {activeQuadDef?.label}
+                            <span className={cn("text-sm font-medium opacity-70", activeQuadDef?.textColor)}>Tasks</span>
                         </h3>
                         {renderSortMenu()}
                     </div>
-                    {renderTaskList(
-                        processedTasks.grouped[mobileQuadrant].active, 
-                        processedTasks.grouped[mobileQuadrant].completed
-                    )}
+                    
+                    <div className="p-4">
+                        {renderTaskList(
+                            processedTasks.grouped[mobileQuadrant].active, 
+                            processedTasks.grouped[mobileQuadrant].completed
+                        )}
+                    </div>
                  </div>
             </div>
         </div>
@@ -279,7 +297,7 @@ export const Matrix: React.FC<MatrixProps> = ({ tasks, onToggle, onDelete, onEdi
                         "flex flex-col rounded-2xl border overflow-hidden bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition-shadow",
                         q.borderColor
                     )}>
-                        <div className={cn("px-4 py-3 border-b flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50", q.borderColor)}>
+                        <div className={cn("px-4 py-3 border-b flex justify-between items-center", q.bg, q.borderColor)}>
                             <h3 className={cn("font-bold text-sm uppercase tracking-wider", q.textColor)}>{q.label}</h3>
                             <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full bg-white dark:bg-slate-700 shadow-sm border opacity-80", q.borderColor)}>
                                 {active.length}

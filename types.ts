@@ -28,6 +28,7 @@ export interface QuadrantDef {
   color: string;
   bg: string;
   borderColor: string;
+  activeBorderColor: string;
   textColor: string;
 }
 

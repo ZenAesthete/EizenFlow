@@ -10,7 +10,8 @@ import {
   Feather,
   Dumbbell,
   Target,
-  ArrowDown
+  ChevronDown,
+  TrendingDown
 } from 'lucide-react';
 import { cn } from '../utils/cn';
 
@@ -122,27 +123,38 @@ export const TaskForm: React.FC<TaskFormProps> = ({ initialTask, onSave, onCance
           </div>
 
           <div className="space-y-6">
-            <div className="space-y-5">
-               <Slider 
-                 label="Importance" 
-                 value={importance} 
-                 onChange={setImportance} 
-                 leftLabel="LOW" 
-                 rightLabel="HIGH" 
-                 leftIcon={<ArrowDown size={16} className={importance < 30 ? "text-indigo-500" : ""} />}
-                 rightIcon={<Star size={16} className={importance > 70 ? "fill-indigo-500 text-indigo-500" : ""} />}
-                 colorClass="accent-indigo-500" 
-               />
-               <Slider 
-                 label="Initial Urgency" 
-                 value={baseUrgency} 
-                 onChange={setBaseUrgency} 
-                 leftLabel="LOW" 
-                 rightLabel="HIGH"
-                 leftIcon={<Coffee size={16} className={baseUrgency < 30 ? "text-emerald-500" : ""} />}
-                 rightIcon={<Flame size={16} className={baseUrgency > 70 ? "fill-rose-500 text-rose-500" : ""} />}
-                 colorClass="accent-indigo-500" 
-               />
+            <div className="space-y-4">
+               <div>
+                  <Slider 
+                    label="Importance" 
+                    value={importance} 
+                    onChange={setImportance} 
+                    leftLabel="LOW" 
+                    rightLabel="HIGH" 
+                    leftIcon={<ChevronDown size={16} className={importance < 30 ? "text-indigo-500" : ""} />}
+                    rightIcon={<Star size={16} className={importance > 70 ? "fill-amber-400 text-amber-400" : ""} />}
+                    colorClass="accent-indigo-500" 
+                  />
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium px-1 mt-1">
+                    Significance. Does this align with your long-term goals?
+                  </p>
+               </div>
+
+               <div>
+                  <Slider 
+                    label="Initial Urgency" 
+                    value={baseUrgency} 
+                    onChange={setBaseUrgency} 
+                    leftLabel="LOW" 
+                    rightLabel="HIGH"
+                    leftIcon={<Coffee size={16} className={baseUrgency < 30 ? "text-emerald-500" : ""} />}
+                    rightIcon={<Flame size={16} className={baseUrgency > 70 ? "fill-rose-500 text-rose-500" : ""} />}
+                    colorClass="accent-indigo-500" 
+                  />
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium px-1 mt-1">
+                    Time Pressure. How soon does this need attention?
+                  </p>
+               </div>
             </div>
             
             {/* Due Date Card */}
@@ -213,27 +225,38 @@ export const TaskForm: React.FC<TaskFormProps> = ({ initialTask, onSave, onCance
                 )}
             </div>
 
-            <div className="space-y-5">
-              <Slider 
-                label="Impact" 
-                value={impact} 
-                onChange={setImpact} 
-                leftLabel="LOW" 
-                rightLabel="HIGH" 
-                leftIcon={<ArrowDown size={16} className={impact < 30 ? "text-amber-500" : ""} />}
-                rightIcon={<Target size={16} className={impact > 70 ? "text-amber-500" : ""} />}
-                colorClass="accent-indigo-500" 
-              />
-              <Slider 
-                label="Effort" 
-                value={effort} 
-                onChange={setEffort} 
-                leftLabel="EASY" 
-                rightLabel="HARD" 
-                leftIcon={<Feather size={16} className={effort < 30 ? "text-emerald-500" : ""} />}
-                rightIcon={<Dumbbell size={16} className={effort > 70 ? "text-slate-700 dark:text-slate-300" : ""} />}
-                colorClass="accent-indigo-500" 
-              />
+            <div className="space-y-4">
+              <div>
+                  <Slider 
+                    label="Impact" 
+                    value={impact} 
+                    onChange={setImpact} 
+                    leftLabel="LOW" 
+                    rightLabel="HIGH" 
+                    leftIcon={<TrendingDown size={16} className={impact < 30 ? "text-amber-500" : ""} />}
+                    rightIcon={<Target size={16} className={impact > 70 ? "text-amber-500" : ""} />}
+                    colorClass="accent-indigo-500" 
+                  />
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium px-1 mt-1">
+                    Value. How big is the payoff or outcome?
+                  </p>
+              </div>
+
+              <div>
+                  <Slider 
+                    label="Effort" 
+                    value={effort} 
+                    onChange={setEffort} 
+                    leftLabel="EASY" 
+                    rightLabel="HARD" 
+                    leftIcon={<Feather size={16} className={effort < 30 ? "text-emerald-500" : ""} />}
+                    rightIcon={<Dumbbell size={16} className={effort > 70 ? "text-slate-700 dark:text-slate-300" : ""} />}
+                    colorClass="accent-indigo-500" 
+                  />
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium px-1 mt-1">
+                    Cost. How much energy or time is required?
+                  </p>
+              </div>
             </div>
           </div>
           

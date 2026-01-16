@@ -1,6 +1,6 @@
 
 import { Task } from '../types';
-import { calculateCurrentUrgency } from './urgency';
+import { calculateCurrentUrgency, getQuadrant } from './urgency';
 
 /**
  * Sorting Strategy 1: Smart Eisenhower (Default)
@@ -28,6 +28,12 @@ export const scoreLeverage = (task: Task): number => {
  * Sorting Strategy 3: Balanced Score (WSJF-inspired)
  * Formula: ((0.55*Im + 0.45*Ip) * (1 + (U/100)^2)) / (E + 10)
  * Considers all 4 factors with urgency as a multiplier.
+ * 
+ * Includes Quadrant Multipliers to prevent "Urgency Addiction":
+ * Q1 (Do): x1.15
+ * Q2 (Schedule): x1.10 (Boosts strategic work)
+ * Q3 (Delegate): x0.85 (Deprioritizes noise)
+ * Q4 (Eliminate): x0.60
  */
 export const scoreBalanced = (task: Task): number => {
   const urgency = calculateCurrentUrgency(task);
@@ -35,10 +41,26 @@ export const scoreBalanced = (task: Task): number => {
   const impact = task.impact ?? 50;
   const effort = task.effort ?? 50;
 
+  // 1. Base WSJF Score (Weighted Shortest Job First)
+  // Numerator: Cost of Delay (Value + Urgency Multiplier)
+  // Denominator: Job Size (Effort)
   const value = (0.55 * importance) + (0.45 * impact);
   const urgencyMultiplier = 1 + Math.pow(urgency / 100, 2);
+  const baseScore = (value * urgencyMultiplier) / (effort + 10);
+
+  // 2. Quadrant Multiplier
+  // Ensures strategic (Q2) tasks remain visible against urgent noise (Q3)
+  const quadrant = getQuadrant(importance, urgency);
+  let multiplier = 1.0;
   
-  return (value * urgencyMultiplier) / (effort + 10);
+  switch (quadrant) {
+    case 'do': multiplier = 1.15; break;        // Urgent & Important
+    case 'schedule': multiplier = 1.10; break;  // Not Urgent & Important (Strategic)
+    case 'delegate': multiplier = 0.85; break;  // Urgent & Not Important (Distraction)
+    case 'eliminate': multiplier = 0.60; break; // Neither
+  }
+
+  return baseScore * multiplier;
 };
 
 /**
