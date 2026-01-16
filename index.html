@@ -1,10 +1,21 @@
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
+    <meta name="description" content="A smart task manager based on the Eisenhower Matrix that automatically adjusts task urgency." />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="EisenFlow">
+    
     <title>EisenFlow</title>
+    
+    <link rel="manifest" href="./manifest.json" />
+    <link rel="apple-touch-icon" href="https://unpkg.com/lucide-static@0.344.0/icons/zap.svg" />
+    <link rel="icon" type="image/svg+xml" href="https://unpkg.com/lucide-static@0.344.0/icons/zap.svg" />
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -22,8 +33,7 @@
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
       body {
         font-family: 'Inter', sans-serif;
-        /* background-color set in Tailwind classes in App.tsx/index.html generally, 
-           but setting here helps prevent FOUC */
+        overscroll-behavior-y: none; /* Prevent pull-to-refresh on mobile PWA */
       }
       /* Custom Scrollbar */
       ::-webkit-scrollbar {
@@ -61,6 +71,19 @@
     "lz-string": "https://esm.sh/lz-string@1.5.0"
   }
 }
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(registration => {
+          console.log('SW registered: ', registration);
+        })
+        .catch(registrationError => {
+          console.log('SW registration failed: ', registrationError);
+        });
+    });
+  }
 </script>
 <link rel="stylesheet" href="/index.css">
 </head>
