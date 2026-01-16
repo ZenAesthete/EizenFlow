@@ -6,13 +6,15 @@
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
     <meta name="description" content="A smart task manager based on the Eisenhower Matrix that automatically adjusts task urgency." />
+    
+    <!-- PWA primary tags -->
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="EisenFlow">
+    <link rel="manifest" href="manifest.json" />
     
     <title>EisenFlow</title>
     
-    <link rel="manifest" href="./manifest.json" />
     <link rel="apple-touch-icon" href="https://unpkg.com/lucide-static@0.344.0/icons/zap.svg" />
     <link rel="icon" type="image/svg+xml" href="https://unpkg.com/lucide-static@0.344.0/icons/zap.svg" />
 
@@ -33,7 +35,8 @@
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
       body {
         font-family: 'Inter', sans-serif;
-        overscroll-behavior-y: none; /* Prevent pull-to-refresh on mobile PWA */
+        overscroll-behavior-y: none;
+        -webkit-tap-highlight-color: transparent;
       }
       /* Custom Scrollbar */
       ::-webkit-scrollbar {
@@ -51,7 +54,6 @@
         background: #94a3b8;
       }
       
-      /* Dark mode scrollbar */
       .dark ::-webkit-scrollbar-thumb {
         background: #475569;
       }
@@ -72,23 +74,24 @@
   }
 }
 </script>
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js')
-        .then(registration => {
-          console.log('SW registered: ', registration);
-        })
-        .catch(registrationError => {
-          console.log('SW registration failed: ', registrationError);
-        });
-    });
-  }
-</script>
 <link rel="stylesheet" href="/index.css">
 </head>
   <body class="bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
     <div id="root"></div>
+    <script>
+      // Service Worker registration with origin-relative path.
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          // Using ./sw.js to explicitly stay within the current path's origin context
+          navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('Service Worker Registered', reg))
+            .catch(err => {
+              console.error('Service Worker Registration Failed', err);
+            });
+        });
+      }
+    </script>
+    <script type="module" src="index.tsx"></script>
   <script type="module" src="/index.tsx"></script>
 </body>
 </html>
