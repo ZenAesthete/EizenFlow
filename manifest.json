@@ -2,7 +2,9 @@
   "name": "EisenFlow",
   "short_name": "EisenFlow",
   "description": "Smart Eisenhower Matrix Task Manager",
-  "start_url": "index.html",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#4f46e5",
@@ -12,13 +14,13 @@
       "src": "https://unpkg.com/lucide-static@0.344.0/icons/zap.svg",
       "sizes": "192x192",
       "type": "image/svg+xml",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
       "src": "https://unpkg.com/lucide-static@0.344.0/icons/zap.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
-      "purpose": "any"
+      "purpose": "any maskable"
     }
   ]
 }

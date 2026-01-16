@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="EisenFlow">
-    <link rel="manifest" href="manifest.json" />
+    <link rel="manifest" href="/manifest.json" />
     
     <title>EisenFlow</title>
     
@@ -79,15 +79,12 @@
   <body class="bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
     <div id="root"></div>
     <script>
-      // Service Worker registration with origin-relative path.
+      // Production Service Worker Registration
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          // Using ./sw.js to explicitly stay within the current path's origin context
-          navigator.serviceWorker.register('./sw.js')
-            .then(reg => console.log('Service Worker Registered', reg))
-            .catch(err => {
-              console.error('Service Worker Registration Failed', err);
-            });
+          navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('SW registered!', reg))
+            .catch(err => console.error('SW failed:', err));
         });
       }
     </script>
