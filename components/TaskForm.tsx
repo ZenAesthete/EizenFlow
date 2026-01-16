@@ -106,7 +106,6 @@ export const TaskForm: React.FC<TaskFormProps> = ({ initialTask, onSave, onCance
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Task Title"
               className="w-full text-xl font-bold bg-transparent border-none focus:ring-0 placeholder:text-slate-300 dark:placeholder:text-slate-700 px-0 text-slate-900 dark:text-white leading-tight"
-              autoFocus
             />
             <textarea
               value={description}

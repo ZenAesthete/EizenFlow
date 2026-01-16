@@ -116,6 +116,48 @@ export const Matrix: React.FC<MatrixProps> = ({ tasks, onToggle, onDelete, onEdi
     return { grouped, allList };
   }, [tasks, currentSort]); 
 
+  const renderSortMenu = () => (
+    <div className="relative">
+        <button 
+            onClick={(e) => { e.stopPropagation(); setIsSortMenuOpen(!isSortMenuOpen); }}
+            className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors"
+            title="Sort Tasks"
+        >
+            <Filter size={18} />
+        </button>
+        {isSortMenuOpen && (
+            <>
+            <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setIsSortMenuOpen(false); }} />
+            <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-100 dark:border-slate-800 z-20 overflow-hidden animate-in fade-in zoom-in-95 duration-100 origin-top-right">
+                <div className="bg-slate-50 dark:bg-slate-800/50 px-3 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800/50">
+                    Sort By
+                </div>
+                {SORT_OPTIONS.map(option => (
+                    <button
+                        key={option.id}
+                        onClick={(e) => { e.stopPropagation(); setCurrentSort(option.id); setIsSortMenuOpen(false); }}
+                        className={cn(
+                            "w-full text-left px-3 py-2 text-sm transition-colors border-b border-slate-50 dark:border-slate-800/50 last:border-0",
+                            currentSort === option.id 
+                                ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 font-medium" 
+                                : "hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+                        )}
+                    >
+                        <div className="flex flex-col gap-0.5">
+                            <span className="flex items-center justify-between text-xs font-semibold">
+                                {option.label}
+                                {currentSort === option.id && <CheckCheck size={14} />}
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-normal leading-tight">{option.description}</span>
+                        </div>
+                    </button>
+                ))}
+            </div>
+            </>
+        )}
+    </div>
+  );
+
   const renderTaskList = (active: Task[], completed: Task[], showEmptyState = true, isListMode = false) => {
     return (
         <div className="space-y-4">
@@ -173,36 +215,7 @@ export const Matrix: React.FC<MatrixProps> = ({ tasks, onToggle, onDelete, onEdi
                     <h2 className="text-xl font-bold dark:text-white">All Tasks</h2>
                     <p className="text-sm text-slate-500">Sorted by {SORT_OPTIONS.find(o => o.id === currentSort)?.label}</p>
                 </div>
-                
-                <div className="relative">
-                    <button 
-                        onClick={() => setIsSortMenuOpen(!isSortMenuOpen)}
-                        className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
-                    >
-                        <Filter size={18} />
-                    </button>
-                    {isSortMenuOpen && (
-                        <>
-                        <div className="fixed inset-0 z-10" onClick={() => setIsSortMenuOpen(false)} />
-                        <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-100 dark:border-slate-800 z-20 overflow-hidden">
-                            {SORT_OPTIONS.map(option => (
-                                <button
-                                    key={option.id}
-                                    onClick={() => { setCurrentSort(option.id); setIsSortMenuOpen(false); }}
-                                    className={cn(
-                                        "w-full text-left px-4 py-3 text-sm transition-colors border-b border-slate-50 dark:border-slate-800/50 last:border-0",
-                                        currentSort === option.id 
-                                            ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 font-medium" 
-                                            : "hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
-                                    )}
-                                >
-                                    {option.label}
-                                </button>
-                            ))}
-                        </div>
-                        </>
-                    )}
-                </div>
+                {renderSortMenu()}
             </div>
             <div className="flex-1">
                  {renderTaskList(processedTasks.allList.active, processedTasks.allList.completed, true, true)}
@@ -242,10 +255,13 @@ export const Matrix: React.FC<MatrixProps> = ({ tasks, onToggle, onDelete, onEdi
 
             <div className="flex-1 overflow-y-auto">
                  <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 min-h-[50vh] shadow-sm border border-slate-100 dark:border-slate-800/50">
-                    <h3 className="text-lg font-bold mb-4 flex items-center gap-2 dark:text-white">
-                        {QUADRANTS.find(q => q.id === mobileQuadrant)?.label}
-                        <span className="text-slate-400 text-sm font-normal">Tasks</span>
-                    </h3>
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-bold flex items-center gap-2 dark:text-white">
+                            {QUADRANTS.find(q => q.id === mobileQuadrant)?.label}
+                            <span className="text-slate-400 text-sm font-normal">Tasks</span>
+                        </h3>
+                        {renderSortMenu()}
+                    </div>
                     {renderTaskList(
                         processedTasks.grouped[mobileQuadrant].active, 
                         processedTasks.grouped[mobileQuadrant].completed

@@ -15,7 +15,7 @@ export const GraphView: React.FC<GraphViewProps> = ({ tasks, onEdit }) => {
        {/* Container keeps graph square */}
        <div className="w-full max-w-[600px] aspect-square relative flex flex-col">
            
-           <div className="flex-1 grid grid-cols-[30px_1fr] grid-rows-[1fr_30px] gap-2 h-full">
+           <div className="flex-1 grid grid-cols-[20px_1fr] grid-rows-[1fr_20px] gap-1 h-full">
               {/* Y-Axis Label */}
               <div className="flex items-center justify-center">
                 <div className="-rotate-90 whitespace-nowrap text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] select-none">

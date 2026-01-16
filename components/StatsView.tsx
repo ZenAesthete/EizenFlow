@@ -155,6 +155,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ tasks }) => {
                     <svg viewBox="0 0 100 100" className="transform -rotate-90 w-full h-full">
                          <circle cx="50" cy="50" r={radius} stroke="currentColor" strokeWidth="12" fill="transparent" className="text-slate-100 dark:text-slate-800" />
                          {stats.activeCount > 0 && donutSegments.map(seg => (
+                           seg.pct > 0 ? (
                              <circle 
                                 key={seg.id}
                                 cx="50" cy="50" r={radius}
@@ -166,6 +167,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ tasks }) => {
                                 strokeLinecap="round"
                                 className={cn(seg.color, "transition-all duration-1000 ease-out")}
                              />
+                           ) : null
                          ))}
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
