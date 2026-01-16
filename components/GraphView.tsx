@@ -10,16 +10,6 @@ interface GraphViewProps {
 }
 
 export const GraphView: React.FC<GraphViewProps> = ({ tasks, onEdit }) => {
-  const quadrantCounts = useMemo(() => {
-    const counts = { do: 0, schedule: 0, delegate: 0, eliminate: 0 };
-    tasks.forEach(task => {
-      const urgency = calculateCurrentUrgency(task);
-      const q = getQuadrant(task.importance, urgency);
-      counts[q]++;
-    });
-    return counts;
-  }, [tasks]);
-
   return (
     <div className="h-full w-full flex flex-col items-center justify-center p-2">
        {/* Container keeps graph square */}
@@ -34,28 +24,31 @@ export const GraphView: React.FC<GraphViewProps> = ({ tasks, onEdit }) => {
               </div>
 
               {/* Main Graph Box */}
-              <div className="relative bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl overflow-hidden shadow-sm">
+              {/* Removed overflow-hidden from here to let tooltips spill out */}
+              <div className="relative bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl shadow-sm z-0">
                  
-                 {/* Background Quadrants */}
-                 <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 z-0">
-                    <div className="bg-sky-50/50 dark:bg-sky-900/20 border-r border-b border-slate-200 dark:border-slate-800 p-2">
-                       <span className="text-[10px] font-bold text-sky-700 dark:text-sky-400 opacity-50">SCHEDULE</span>
+                 {/* Background Quadrants - Clipped to corners */}
+                 <div className="absolute inset-0 rounded-xl overflow-hidden z-0 pointer-events-none">
+                    <div className="absolute inset-0 grid grid-cols-2 grid-rows-2">
+                        <div className="bg-sky-50/50 dark:bg-sky-900/20 border-r border-b border-slate-200 dark:border-slate-800 p-2">
+                            <span className="text-[10px] font-bold text-sky-700 dark:text-sky-400 opacity-50">SCHEDULE</span>
+                        </div>
+                        <div className="bg-rose-50/50 dark:bg-rose-900/20 border-b border-slate-200 dark:border-slate-800 p-2 text-right">
+                            <span className="text-[10px] font-bold text-rose-700 dark:text-rose-400 opacity-50">DO FIRST</span>
+                        </div>
+                        <div className="bg-slate-100/50 dark:bg-slate-800/20 border-r border-slate-200 dark:border-slate-800 p-2 flex items-end">
+                            <span className="text-[10px] font-bold text-slate-500 opacity-50">ELIMINATE</span>
+                        </div>
+                        <div className="bg-amber-50/50 dark:bg-amber-900/20 p-2 flex items-end justify-end">
+                            <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 opacity-50">DELEGATE</span>
+                        </div>
                     </div>
-                    <div className="bg-rose-50/50 dark:bg-rose-900/20 border-b border-slate-200 dark:border-slate-800 p-2 text-right">
-                       <span className="text-[10px] font-bold text-rose-700 dark:text-rose-400 opacity-50">DO FIRST</span>
+                    
+                    {/* Center Crosshair lines */}
+                    <div className="absolute inset-0">
+                        <div className="absolute left-1/2 top-0 bottom-0 w-px bg-slate-300 dark:bg-slate-600 border-l border-dashed border-slate-400/50" />
+                        <div className="absolute top-1/2 left-0 right-0 h-px bg-slate-300 dark:bg-slate-600 border-t border-dashed border-slate-400/50" />
                     </div>
-                    <div className="bg-slate-100/50 dark:bg-slate-800/20 border-r border-slate-200 dark:border-slate-800 p-2 flex items-end">
-                       <span className="text-[10px] font-bold text-slate-500 opacity-50">ELIMINATE</span>
-                    </div>
-                    <div className="bg-amber-50/50 dark:bg-amber-900/20 p-2 flex items-end justify-end">
-                       <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 opacity-50">DELEGATE</span>
-                    </div>
-                 </div>
-
-                 {/* Center Crosshair lines */}
-                 <div className="absolute inset-0 pointer-events-none">
-                     <div className="absolute left-1/2 top-0 bottom-0 w-px bg-slate-300 dark:bg-slate-600 border-l border-dashed border-slate-400/50" />
-                     <div className="absolute top-1/2 left-0 right-0 h-px bg-slate-300 dark:bg-slate-600 border-t border-dashed border-slate-400/50" />
                  </div>
 
                  {/* Tasks Points */}
@@ -67,19 +60,56 @@ export const GraphView: React.FC<GraphViewProps> = ({ tasks, onEdit }) => {
                       const x = Math.min(96, Math.max(4, urgency));
                       const y = Math.min(96, Math.max(4, importance));
                       
+                      // Dynamic Tooltip Positioning Logic
+                      const isTop = importance > 80;
+                      const isLeft = urgency < 20;
+                      const isRight = urgency > 80;
+
+                      // Vertical Placement (Above or Below)
+                      const verticalClass = isTop ? "top-full mt-2.5" : "bottom-full mb-2.5";
+                      
+                      // Horizontal Alignment & Arrow Position
+                      let horizontalClass = "left-1/2 -translate-x-1/2";
+                      let arrowPosClass = "left-1/2 -translate-x-1/2";
+                      
+                      if (isLeft) {
+                        horizontalClass = "left-0 -translate-x-1"; 
+                        arrowPosClass = "left-1.5";
+                      } else if (isRight) {
+                        horizontalClass = "right-0 translate-x-1";
+                        arrowPosClass = "right-1.5";
+                      }
+
+                      // Arrow Direction (Points Up if tooltip is below, Points Down if tooltip is above)
+                      // Using border trick for triangle
+                      const arrowDirClass = isTop 
+                        ? "bottom-full border-b-slate-800 dark:border-b-slate-700" // Points Up
+                        : "top-full border-t-slate-800 dark:border-t-slate-700";   // Points Down
+
                       return (
                         <button
                           key={task.id}
                           onClick={(e) => { e.stopPropagation(); onEdit(task); }}
-                          className="absolute w-4 h-4 md:w-6 md:h-6 -ml-2 -mb-2 md:-ml-3 md:-mb-3 group focus:outline-none z-20 hover:z-50 hover:scale-125 transition-transform"
+                          className="absolute w-4 h-4 md:w-6 md:h-6 -ml-2 -mb-2 md:-ml-3 md:-mb-3 group focus:outline-none z-20 hover:z-50 hover:scale-110 transition-transform"
                           style={{ left: `${x}%`, bottom: `${y}%` }}
                         >
                            <span className="block w-full h-full rounded-full shadow-sm border border-white dark:border-slate-900"
                            style={{ backgroundColor: getPointColor(importance, urgency) }}
                            />
+                           
                            {/* Tooltip */}
-                           <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-slate-900 text-white text-[10px] py-1 px-2 rounded whitespace-nowrap z-50">
+                           <div className={cn(
+                               "absolute hidden group-hover:block bg-slate-800 dark:bg-slate-700 text-white text-[10px] font-medium py-1.5 px-3 rounded-lg shadow-xl w-max max-w-[150px] whitespace-normal break-words z-50 pointer-events-none cursor-default",
+                               verticalClass,
+                               horizontalClass
+                           )}>
                                {task.title}
+                               {/* CSS Triangle Arrow */}
+                               <div className={cn(
+                                   "absolute w-0 h-0 border-[6px] border-transparent",
+                                   arrowDirClass,
+                                   arrowPosClass
+                               )} />
                            </div>
                         </button>
                       );

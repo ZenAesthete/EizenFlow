@@ -2,7 +2,7 @@
 import React from 'react';
 import { Task } from '../types';
 import { calculateCurrentUrgency, getQuadrant } from '../utils/urgency';
-import { Trash2, CheckCircle2, Circle, Edit2, Clock, Check } from 'lucide-react';
+import { Trash2, CheckCircle2, Circle, Edit2, Clock, Check, Star, Flame, Target, Dumbbell } from 'lucide-react';
 import { cn } from '../utils/cn';
 
 interface TaskCardProps {
@@ -69,21 +69,25 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onToggle, onDelete, on
 
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
-            <h4 className={cn(
-              "text-sm sm:text-base font-semibold text-slate-900 dark:text-slate-100 leading-tight truncate pr-6",
-              task.completed && "line-through text-slate-500"
-            )}>
+            <h4 
+              className={cn(
+                "text-sm sm:text-base font-semibold text-slate-900 dark:text-slate-100 leading-tight pr-7",
+                "break-words w-full",
+                task.completed && "line-through text-slate-500"
+              )}
+              style={{ wordBreak: 'break-word' }}
+            >
               {task.title}
             </h4>
           </div>
           
           {task.description && (
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-1">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 break-words" style={{ wordBreak: 'break-word' }}>
               {task.description}
             </p>
           )}
 
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2.5">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mt-2.5">
             {showQuadrantTag && !task.completed && (
                 <span className={cn("text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 uppercase tracking-wide", styles.text)}>
                     {styles.label}
@@ -101,10 +105,33 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onToggle, onDelete, on
             )}
 
             {!task.completed && (
-                <div className="flex items-center gap-1 text-[10px] text-slate-400 font-mono">
-                    <span className={cn("w-1.5 h-1.5 rounded-full", urgency > 80 ? "bg-rose-500" : urgency > 50 ? "bg-amber-500" : "bg-emerald-500")} />
-                    <span>U:{Math.round(urgency)}</span>
-                </div>
+                <>
+                  <div className="w-px h-3 bg-slate-200 dark:bg-slate-700 hidden sm:block" />
+                  
+                  {/* Metric: Importance */}
+                  <div className="flex items-center gap-1" title="Importance">
+                     <Star size={12} className="text-indigo-500 fill-indigo-500/10" />
+                     <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 tabular-nums">{Math.round(task.importance)}</span>
+                  </div>
+
+                  {/* Metric: Urgency */}
+                  <div className="flex items-center gap-1" title="Urgency">
+                     <Flame size={12} className={cn("fill-rose-500/10", urgency > 70 ? "text-rose-600" : "text-rose-500")} />
+                     <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 tabular-nums">{Math.round(urgency)}</span>
+                  </div>
+
+                  {/* Metric: Impact */}
+                  <div className="flex items-center gap-1" title="Impact">
+                     <Target size={12} className="text-amber-500" />
+                     <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 tabular-nums">{Math.round(task.impact ?? 50)}</span>
+                  </div>
+
+                   {/* Metric: Effort */}
+                   <div className="flex items-center gap-1" title="Effort">
+                     <Dumbbell size={12} className="text-slate-500" />
+                     <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 tabular-nums">{Math.round(task.effort ?? 50)}</span>
+                  </div>
+                </>
             )}
           </div>
         </div>

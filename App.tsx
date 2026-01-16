@@ -222,7 +222,7 @@ export default function App() {
       </aside>
 
       {/* MOBILE HEADER */}
-      <header className="md:hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 py-3 flex items-center justify-between sticky top-0 z-20">
+      <header className="md:hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 py-3 flex items-center justify-between sticky top-0 z-20 shrink-0">
          {!isSearchVisible ? (
            <>
              <div className="flex items-center gap-2">
@@ -256,19 +256,19 @@ export default function App() {
       </header>
 
       {/* MAIN CONTENT AREA */}
-      <main className="flex-1 flex flex-col min-w-0 relative">
+      <main className="flex-1 flex flex-col min-w-0 min-h-0 relative overflow-hidden">
         
         {/* Stats Title Header or Simple spacing */}
         {currentView === 'stats' ? (
-            <div className="p-6 pb-2">
+            <div className="p-6 pb-2 shrink-0">
                  <h2 className="text-2xl font-bold dark:text-white">Your Insights</h2>
                  <p className="text-slate-500 text-sm">Track your progress and productivity metrics.</p>
             </div>
         ) : (
-          <div className="h-4" />
+          <div className="h-4 shrink-0" />
         )}
 
-        <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 pt-2 pb-24 md:pb-6">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 pt-2 pb-24 md:pb-6 custom-scrollbar">
             {currentView === 'matrix' && (
                 <Matrix 
                     tasks={filteredTasks} 
