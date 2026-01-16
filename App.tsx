@@ -6,31 +6,35 @@ import { TaskForm } from './components/TaskForm';
 import { GraphView } from './components/GraphView';
 import { StatsView } from './components/StatsView';
 import { ConfirmDialog } from './components/ConfirmDialog';
-import { pushToCloud, pullFromCloud, generateSyncKey } from './utils/sync';
+import { SyncModal } from './components/SyncModal';
 import { 
   Plus, LayoutGrid, Search, Zap, Moon, Sun, 
   ScatterChart, RefreshCw, Check, Cloud, Layers,
   List,
   Home,
   BarChart3,
-  PieChart
+  PieChart,
+  X,
+  Copy,
+  Link,
+  QrCode
 } from 'lucide-react';
 import { cn } from './utils/cn';
 
 const STORAGE_KEY = 'eisenflow_data_v1';
 const PREFS_KEY = 'eisenflow_prefs_v1';
-const SYNC_KEY_STORAGE = 'eisenflow_sync_key';
 
 export default function App() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState('');
-  const [syncKey, setSyncKey] = useState<string>(localStorage.getItem(SYNC_KEY_STORAGE) || '');
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [lastSyncStatus, setLastSyncStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  const [showSyncModal, setShowSyncModal] = useState(false);
+  const [isSearchVisible, setIsSearchVisible] = useState(false);
   
+  // Sync State
+  const [showSyncModal, setShowSyncModal] = useState(false);
+  const [importConfirm, setImportConfirm] = useState<{isOpen: boolean, newTasks: Task[] | null}>({ isOpen: false, newTasks: null });
+
   // Delete confirmation state
   const [deleteConfirmState, setDeleteConfirmState] = useState<{isOpen: boolean, taskId: string | null}>({
     isOpen: false,
@@ -38,7 +42,6 @@ export default function App() {
   });
   
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  // Replaced simple viewMode with specific navigation state
   const [currentView, setCurrentView] = useState<'matrix' | 'list' | 'graph' | 'stats'>('matrix');
 
   useEffect(() => {
@@ -73,34 +76,19 @@ export default function App() {
     else document.documentElement.classList.remove('dark');
   }, [theme]);
 
-  const handleSync = async () => {
-    let currentKey = syncKey;
-    if (!currentKey) {
-      currentKey = generateSyncKey();
-      setSyncKey(currentKey);
-      localStorage.setItem(SYNC_KEY_STORAGE, currentKey);
-    }
-    setIsSyncing(true);
-    setLastSyncStatus('idle');
-    const success = await pushToCloud(currentKey, tasks);
-    setIsSyncing(false);
-    setLastSyncStatus(success ? 'success' : 'error');
-    if (success) setTimeout(() => setLastSyncStatus('idle'), 3000);
+  // Handler when QR is scanned successfully
+  const handleQRImport = (importedTasks: Task[]) => {
+    // Close sync modal immediately
+    setShowSyncModal(false);
+    // Ask for confirmation before overwriting
+    setImportConfirm({ isOpen: true, newTasks: importedTasks });
   };
 
-  const pullSync = async (inputKey: string) => {
-    setIsSyncing(true);
-    const cloudTasks = await pullFromCloud(inputKey);
-    setIsSyncing(false);
-    if (cloudTasks) {
-      setTasks(cloudTasks);
-      setSyncKey(inputKey);
-      localStorage.setItem(SYNC_KEY_STORAGE, inputKey);
-      setLastSyncStatus('success');
-      return true;
+  const confirmImport = () => {
+    if (importConfirm.newTasks) {
+      setTasks(importConfirm.newTasks);
     }
-    setLastSyncStatus('error');
-    return false;
+    setImportConfirm({ isOpen: false, newTasks: null });
   };
 
   const handleAddTask = (taskData: Omit<Task, 'id' | 'createdAt' | 'urgencySetAt' | 'completed'>) => {
@@ -174,13 +162,15 @@ export default function App() {
       
       {/* DESKTOP SIDEBAR */}
       <aside className="hidden md:flex flex-col w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 shrink-0 z-30">
-        <div className="p-6 flex items-center gap-2">
-            <div className="bg-indigo-600 dark:bg-indigo-500 p-1.5 rounded-lg text-white shadow-md">
-                <Zap size={20} fill="currentColor" />
+        <div className="p-6 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+                <div className="bg-indigo-600 dark:bg-indigo-500 p-1.5 rounded-lg text-white shadow-md">
+                    <Zap size={20} fill="currentColor" />
+                </div>
+                <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+                    Eisen<span className="text-indigo-600 dark:text-indigo-400">Flow</span>
+                </h1>
             </div>
-            <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-                Eisen<span className="text-indigo-600 dark:text-indigo-400">Flow</span>
-            </h1>
         </div>
 
         <nav className="flex-1 px-4 space-y-1">
@@ -202,12 +192,24 @@ export default function App() {
         </nav>
 
         <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
+           <div className="px-3 py-2">
+              <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={16} />
+                  <input 
+                      type="text" 
+                      placeholder="Search..." 
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-xl py-2 pl-9 pr-4 text-xs focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                  />
+              </div>
+           </div>
            <button 
              onClick={() => setShowSyncModal(true)}
              className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
            >
-             <RefreshCw size={18} className={cn(isSyncing && "animate-spin")} />
-             Sync
+             <QrCode size={18} />
+             Sync via QR
            </button>
            <button 
              onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')}
@@ -221,42 +223,49 @@ export default function App() {
 
       {/* MOBILE HEADER */}
       <header className="md:hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 py-3 flex items-center justify-between sticky top-0 z-20">
-         <div className="flex items-center gap-2">
-            <div className="bg-indigo-600 dark:bg-indigo-500 p-1 rounded-md text-white">
-                <Zap size={16} fill="currentColor" />
-            </div>
-            <h1 className="text-lg font-bold tracking-tight">EisenFlow</h1>
-         </div>
-         <div className="flex items-center gap-2">
-             <button onClick={() => setShowSyncModal(true)} className="p-2 text-slate-500"><RefreshCw size={18} className={cn(isSyncing && "animate-spin")} /></button>
-             <button onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')} className="p-2 text-slate-500">{theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}</button>
-         </div>
-      </header>
-
-      {/* MAIN CONTENT AREA */}
-      <main className="flex-1 flex flex-col min-w-0 relative">
-        {/* Search Bar (Global) */}
-        {currentView !== 'stats' && (
-          <div className="p-4 md:p-6 pb-2">
-             <div className="relative max-w-xl">
+         {!isSearchVisible ? (
+           <>
+             <div className="flex items-center gap-2">
+                <div className="bg-indigo-600 dark:bg-indigo-500 p-1 rounded-md text-white">
+                    <Zap size={16} fill="currentColor" />
+                </div>
+                <h1 className="text-lg font-bold tracking-tight">EisenFlow</h1>
+             </div>
+             <div className="flex items-center gap-1">
+                 <button onClick={() => setIsSearchVisible(true)} className="p-2 text-slate-500"><Search size={18} /></button>
+                 <button onClick={() => setShowSyncModal(true)} className="p-2 text-slate-500"><QrCode size={18} /></button>
+                 <button onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')} className="p-2 text-slate-500">{theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}</button>
+             </div>
+           </>
+         ) : (
+           <div className="flex-1 flex items-center gap-2 animate-in slide-in-from-right-2 duration-200">
+              <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={16} />
                   <input 
                       type="text" 
                       placeholder="Search tasks..." 
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl py-2.5 pl-10 pr-4 text-sm focus:ring-2 focus:ring-indigo-500/20 outline-none shadow-sm"
+                      className="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-xl py-2 pl-9 pr-4 text-sm focus:ring-0 outline-none"
+                      autoFocus
                   />
               </div>
-          </div>
-        )}
+              <button onClick={() => {setIsSearchVisible(false); setSearchQuery('');}} className="p-2 text-slate-500"><X size={20} /></button>
+           </div>
+         )}
+      </header>
+
+      {/* MAIN CONTENT AREA */}
+      <main className="flex-1 flex flex-col min-w-0 relative">
         
-        {/* Stats Title Header */}
-        {currentView === 'stats' && (
+        {/* Stats Title Header or Simple spacing */}
+        {currentView === 'stats' ? (
             <div className="p-6 pb-2">
                  <h2 className="text-2xl font-bold dark:text-white">Your Insights</h2>
                  <p className="text-slate-500 text-sm">Track your progress and productivity metrics.</p>
             </div>
+        ) : (
+          <div className="h-4" />
         )}
 
         <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 pt-2 pb-24 md:pb-6">
@@ -267,7 +276,7 @@ export default function App() {
                     onDelete={requestDeleteTask} 
                     onEdit={(t) => {setEditingTask(t); setIsFormOpen(true);}} 
                     onAddNew={() => setIsFormOpen(true)} 
-                    viewMode="matrix" // Pass mode explicitly
+                    viewMode="matrix" 
                 />
             )}
             {currentView === 'list' && (
@@ -277,7 +286,7 @@ export default function App() {
                     onDelete={requestDeleteTask} 
                     onEdit={(t) => {setEditingTask(t); setIsFormOpen(true);}} 
                     onAddNew={() => setIsFormOpen(true)} 
-                    viewMode="all" // Reuse Matrix component in 'all' mode
+                    viewMode="all" 
                 />
             )}
             {currentView === 'graph' && (
@@ -328,6 +337,16 @@ export default function App() {
         />
       )}
 
+      {/* SYNC MODAL */}
+      {showSyncModal && (
+        <SyncModal 
+            tasks={tasks}
+            onImport={handleQRImport}
+            onClose={() => setShowSyncModal(false)}
+        />
+      )}
+
+      {/* DELETE CONFIRMATION */}
       <ConfirmDialog 
         isOpen={deleteConfirmState.isOpen}
         title="Delete Task?"
@@ -336,46 +355,14 @@ export default function App() {
         onCancel={cancelDeleteTask}
       />
 
-      {showSyncModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-in fade-in">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-3xl shadow-2xl p-6 space-y-6">
-            <div className="flex justify-between items-start">
-              <div className="space-y-1">
-                <h3 className="text-xl font-bold flex items-center gap-2 dark:text-white">
-                  <Cloud className="text-indigo-500" /> Cloud Sync
-                </h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400">Sync tasks across your devices anonymously.</p>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Your Sync Key</label>
-                <div className="flex items-center justify-between gap-2">
-                  <code className="text-base font-mono font-bold text-indigo-600 dark:text-indigo-400 select-all">
-                    {syncKey || 'No Key'}
-                  </code>
-                  <button onClick={handleSync} disabled={isSyncing} className="p-2 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 rounded-lg hover:bg-indigo-200 disabled:opacity-50">
-                    {lastSyncStatus === 'success' ? <Check size={18} /> : <RefreshCw size={18} className={isSyncing ? "animate-spin" : ""} />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <input 
-                  type="text" 
-                  placeholder="Paste Key here..."
-                  className="flex-1 bg-slate-100 dark:bg-slate-800 border-none rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
-                  onKeyDown={(e) => { if (e.key === 'Enter') pullSync((e.target as HTMLInputElement).value); }}
-                />
-                <button onClick={(e) => { const input = (e.currentTarget.previousSibling as HTMLInputElement); pullSync(input.value); }} className="bg-slate-900 dark:bg-slate-700 text-white px-4 py-2 rounded-xl text-sm font-bold">Link</button>
-              </div>
-            </div>
-
-            <button onClick={() => setShowSyncModal(false)} className="w-full py-3 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-200 transition-colors">Done</button>
-          </div>
-        </div>
-      )}
+      {/* IMPORT CONFIRMATION */}
+      <ConfirmDialog 
+        isOpen={importConfirm.isOpen}
+        title="Overwrite Data?"
+        message={`Scanned data contains ${importConfirm.newTasks?.length} tasks. This will overwrite your current ${tasks.length} tasks.`}
+        onConfirm={confirmImport}
+        onCancel={() => setImportConfirm({ isOpen: false, newTasks: null })}
+      />
     </div>
   );
 }

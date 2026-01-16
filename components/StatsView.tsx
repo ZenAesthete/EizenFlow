@@ -26,7 +26,7 @@ export const StatsView: React.FC<StatsViewProps> = ({ tasks }) => {
       quadrants[q]++;
     });
 
-    const activeTotal = activeTasks.length || 1; // Prevent div by 0 for percentages
+    const activeTotal = activeTasks.length || 1; 
 
     return {
       total,
@@ -62,65 +62,98 @@ export const StatsView: React.FC<StatsViewProps> = ({ tasks }) => {
   });
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="max-w-4xl mx-auto space-y-6 pb-12 animate-in fade-in slide-in-from-bottom-2 duration-500">
         
-      {/* Header Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard icon={<Target size={20} />} label="Total Tasks" value={stats.total} color="bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400" />
-        <StatCard icon={<CheckCircle2 size={20} />} label="Completed" value={stats.completed} color="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" />
-        <StatCard icon={<Clock size={20} />} label="Pending" value={stats.pending} color="bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400" />
-        <StatCard icon={<Trophy size={20} />} label="Efficiency" value={`${stats.winRate}%`} color="bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400" />
+      {/* 4-Column Metric Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard 
+          icon={<Target size={22} />} 
+          label="Total Tasks" 
+          value={stats.total} 
+          color="bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400" 
+        />
+        <StatCard 
+          icon={<CheckCircle2 size={22} />} 
+          label="Completed" 
+          value={stats.completed} 
+          color="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400" 
+        />
+        <StatCard 
+          icon={<Clock size={22} />} 
+          label="Pending" 
+          value={stats.pending} 
+          color="bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400" 
+        />
+        <StatCard 
+          icon={<Trophy size={22} />} 
+          label="Efficiency" 
+          value={`${stats.winRate}%`} 
+          color="bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400" 
+        />
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
-          {/* Win Rate / Progress Bar Chart */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-800">
-             <h3 className="text-lg font-bold mb-6 flex items-center gap-2 text-slate-900 dark:text-white">
-                <CheckCircle2 size={20} className="text-indigo-500" />
+          {/* Completion Rate - 100% Stacked Bar Section */}
+          <div className="bg-white dark:bg-slate-900 rounded-[32px] p-8 shadow-sm border border-slate-100 dark:border-slate-800">
+             <h3 className="text-lg font-bold mb-8 flex items-center gap-3 text-slate-900 dark:text-white">
+                <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                  <CheckCircle2 size={18} />
+                </div>
                 Completion Rate
              </h3>
 
-             <div className="space-y-6">
+             <div className="space-y-8">
                 <div>
-                    <div className="flex justify-between text-sm font-medium mb-2 text-slate-500 dark:text-slate-400">
-                        <span>Win Rate</span>
-                        <span className="text-slate-900 dark:text-white font-bold">{stats.winRate}%</span>
+                    <div className="flex justify-between items-baseline mb-3">
+                        <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">Win Rate</span>
+                        <span className="text-xl font-black text-slate-900 dark:text-white">{stats.winRate}%</span>
                     </div>
-                    {/* 100% Stacked Bar */}
-                    <div className="h-6 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex">
-                        <div style={{ width: `${stats.winRate}%` }} className="h-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)] transition-all duration-1000 ease-out" />
-                        <div className="flex-1 h-full bg-slate-200 dark:bg-slate-700/50" />
+                    
+                    {/* 100% Stacked Horizontal Bar - Redesigned */}
+                    <div className="h-10 w-full bg-slate-100 dark:bg-slate-800 rounded-2xl overflow-hidden flex shadow-inner">
+                        <div 
+                          style={{ width: `${stats.winRate}%` }} 
+                          className="h-full bg-emerald-500 transition-all duration-1000 ease-out relative" 
+                        />
+                        {/* Remaining Part - Red as requested */}
+                        <div className="flex-1 h-full bg-rose-500 transition-colors duration-300" />
                     </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100 dark:border-slate-800/50">
+                <div className="grid grid-cols-2 gap-8 pt-6 border-t border-slate-100 dark:border-slate-800/50">
                     <div>
-                        <div className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">Done</div>
-                        <div className="text-2xl font-black text-slate-900 dark:text-white">{stats.completed}</div>
+                        <div className="flex items-center gap-2 mb-1">
+                            <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                            <div className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Done</div>
+                        </div>
+                        <div className="text-3xl font-black text-emerald-600 dark:text-emerald-400">{stats.completed}</div>
                     </div>
                     <div className="text-right">
-                        <div className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">Remaining</div>
-                        <div className="text-2xl font-black text-slate-900 dark:text-white">{stats.pending}</div>
+                        <div className="flex items-center justify-end gap-2 mb-1">
+                            <div className="text-[10px] text-slate-400 uppercase font-black tracking-widest">Remaining</div>
+                            <div className="w-2 h-2 rounded-full bg-rose-500" />
+                        </div>
+                        <div className="text-3xl font-black text-rose-600 dark:text-rose-400">{stats.pending}</div>
                     </div>
                 </div>
              </div>
           </div>
 
-          {/* Quadrant Distribution Donut */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-slate-800">
-             <h3 className="text-lg font-bold mb-2 flex items-center gap-2 text-slate-900 dark:text-white">
-                <AlertCircle size={20} className="text-indigo-500" />
+          {/* Active Distribution Donut - Redesigned */}
+          <div className="bg-white dark:bg-slate-900 rounded-[32px] p-8 shadow-sm border border-slate-100 dark:border-slate-800">
+             <h3 className="text-lg font-bold mb-2 flex items-center gap-3 text-slate-900 dark:text-white">
+                <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                  <AlertCircle size={18} />
+                </div>
                 Active Distribution
              </h3>
-             <p className="text-sm text-slate-500 mb-6">Where is your focus right now?</p>
+             <p className="text-sm text-slate-500 dark:text-slate-400 ml-11 mb-8">Where is your focus right now?</p>
 
-             <div className="flex items-center gap-6">
+             <div className="flex flex-col sm:flex-row items-center gap-8">
                 {/* SVG Donut */}
                 <div className="relative w-40 h-40 shrink-0">
                     <svg viewBox="0 0 100 100" className="transform -rotate-90 w-full h-full">
-                         {/* Background Circle */}
                          <circle cx="50" cy="50" r={radius} stroke="currentColor" strokeWidth="12" fill="transparent" className="text-slate-100 dark:text-slate-800" />
-                         {/* Segments */}
                          {stats.activeCount > 0 && donutSegments.map(seg => (
                              <circle 
                                 key={seg.id}
@@ -137,12 +170,12 @@ export const StatsView: React.FC<StatsViewProps> = ({ tasks }) => {
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
                         <span className="text-3xl font-black text-slate-900 dark:text-white">{stats.activeCount}</span>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase">Active</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active</span>
                     </div>
                 </div>
 
-                {/* Legend */}
-                <div className="flex-1 space-y-3">
+                {/* Legend - Vertical matching the style */}
+                <div className="flex-1 w-full space-y-4">
                     <LegendItem label="Do First" count={stats.quadrants.do} color="bg-rose-500" />
                     <LegendItem label="Schedule" count={stats.quadrants.schedule} color="bg-sky-500" />
                     <LegendItem label="Delegate" count={stats.quadrants.delegate} color="bg-amber-500" />
@@ -156,23 +189,23 @@ export const StatsView: React.FC<StatsViewProps> = ({ tasks }) => {
 };
 
 const StatCard = ({ icon, label, value, color }: { icon: React.ReactNode, label: string, value: string | number, color: string }) => (
-    <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col items-start gap-3">
-        <div className={cn("p-2 rounded-lg", color)}>
+    <div className="bg-white dark:bg-slate-900 p-6 rounded-[28px] border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col items-start gap-5 transition-transform hover:scale-[1.02] duration-200">
+        <div className={cn("p-3 rounded-[14px] shadow-sm", color)}>
             {icon}
         </div>
         <div>
-            <div className="text-2xl font-black text-slate-900 dark:text-white">{value}</div>
-            <div className="text-xs font-bold text-slate-400 uppercase tracking-wide">{label}</div>
+            <div className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-1">{value}</div>
+            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{label}</div>
         </div>
     </div>
 );
 
 const LegendItem = ({ label, count, color }: { label: string, count: number, color: string }) => (
-    <div className="flex items-center justify-between text-sm">
-        <div className="flex items-center gap-2">
-            <div className={cn("w-3 h-3 rounded-full", color)} />
-            <span className="font-medium text-slate-600 dark:text-slate-300">{label}</span>
+    <div className="flex items-center justify-between group">
+        <div className="flex items-center gap-3">
+            <div className={cn("w-3 h-3 rounded-full shadow-sm", color)} />
+            <span className="text-[13px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">{label}</span>
         </div>
-        <span className="font-bold text-slate-900 dark:text-white">{count}</span>
+        <span className="text-sm font-black text-slate-900 dark:text-white tabular-nums">{count}</span>
     </div>
 );
