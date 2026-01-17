@@ -11,7 +11,7 @@ interface GraphViewProps {
 
 export const GraphView: React.FC<GraphViewProps> = ({ tasks, onEdit }) => {
   return (
-    <div className="h-full w-full flex flex-col items-center justify-center p-2">
+    <div className="h-full w-full flex flex-col items-center justify-center p-4 md:p-6 pb-24 md:pb-6">
        {/* Container keeps graph square */}
        <div className="w-full max-w-[600px] aspect-square relative flex flex-col">
            

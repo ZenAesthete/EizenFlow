@@ -213,15 +213,18 @@ export const Matrix: React.FC<MatrixProps> = ({ tasks, onToggle, onDelete, onEdi
   // --- VIEW: ALL TASKS (LIST) ---
   if (viewMode === 'all') {
     return (
-        <div className="max-w-3xl mx-auto h-full flex flex-col">
-            <div className="flex justify-between items-center mb-4 sticky top-0 bg-slate-50 dark:bg-slate-950 z-10 py-2">
+        <div className="flex flex-col relative min-h-full">
+            {/* Sticky Header - No negative margins needed as parent has no padding */}
+            <div className="sticky top-0 z-40 bg-slate-50/95 backdrop-blur-md dark:bg-slate-950/95 border-b border-slate-200/50 dark:border-slate-800 px-4 md:px-6 py-4 flex justify-between items-center shadow-sm">
                 <div>
-                    <h2 className="text-xl font-bold dark:text-white">All Tasks</h2>
-                    <p className="text-sm text-slate-500">Sorted by {SORT_OPTIONS.find(o => o.id === currentSort)?.label}</p>
+                    <h2 className="text-xl font-bold dark:text-white leading-tight">All Tasks</h2>
+                    <p className="text-xs font-medium text-slate-500 mt-0.5">Sorted by {SORT_OPTIONS.find(o => o.id === currentSort)?.label}</p>
                 </div>
                 {renderSortMenu()}
             </div>
-            <div className="flex-1">
+            
+            {/* Scrollable Content with Padding */}
+            <div className="flex-1 p-4 md:p-6 pb-24 md:pb-8 max-w-3xl mx-auto w-full">
                  {renderTaskList(processedTasks.allList.active, processedTasks.allList.completed, true, true)}
             </div>
         </div>
@@ -232,7 +235,7 @@ export const Matrix: React.FC<MatrixProps> = ({ tasks, onToggle, onDelete, onEdi
   const activeQuadDef = QUADRANTS.find(q => q.id === mobileQuadrant);
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col p-4 md:p-6 pb-24 md:pb-6">
         {/* MOBILE: Segmented Control & Full List */}
         <div className="md:hidden flex flex-col h-full">
             <div className="grid grid-cols-2 gap-2 mb-4 shrink-0">
@@ -262,12 +265,10 @@ export const Matrix: React.FC<MatrixProps> = ({ tasks, onToggle, onDelete, onEdi
             <div className="flex-1 overflow-y-auto">
                  <div className={cn(
                     "bg-white dark:bg-slate-900 rounded-2xl min-h-[50vh] shadow-sm border overflow-hidden",
-                    // Use standard border for container, but could optionally use colored border if desired.
-                    // Sticking to slate to prevent visual overload, but header inside will be colored.
                     "border-slate-200 dark:border-slate-800/50"
                  )}>
                     <div className={cn(
-                        "px-5 py-4 flex items-center justify-between border-b",
+                        "px-5 py-4 flex items-center justify-between border-b sticky top-0 z-10",
                         activeQuadDef?.bg,
                         activeQuadDef?.borderColor
                     )}>

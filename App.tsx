@@ -258,17 +258,8 @@ export default function App() {
       {/* MAIN CONTENT AREA */}
       <main className="flex-1 flex flex-col min-w-0 min-h-0 relative overflow-hidden">
         
-        {/* Stats Title Header or Simple spacing */}
-        {currentView === 'stats' ? (
-            <div className="p-6 pb-2 shrink-0">
-                 <h2 className="text-2xl font-bold dark:text-white">Your Insights</h2>
-                 <p className="text-slate-500 text-sm">Track your progress and productivity metrics.</p>
-            </div>
-        ) : (
-          <div className="h-4 shrink-0" />
-        )}
-
-        <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 pt-2 pb-24 md:pb-6 custom-scrollbar">
+        {/* We removed the global padding here to fix sticky header issues. Padding is now handled inside each view component. */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar">
             {currentView === 'matrix' && (
                 <Matrix 
                     tasks={filteredTasks} 
