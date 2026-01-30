@@ -4,7 +4,7 @@ import { Task } from '../types';
 import { generateSyncCode, parseSyncCode } from '../utils/qrUtils';
 import QRCode from 'react-qr-code';
 import jsQR from 'jsqr';
-import { X, QrCode, Camera, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { X, QrCode, Camera, AlertTriangle, Download, Upload, FileJson, Share2 } from 'lucide-react';
 import { cn } from '../utils/cn';
 
 interface SyncModalProps {
@@ -24,6 +24,9 @@ export const SyncModal: React.FC<SyncModalProps> = ({ tasks, onImport, onClose }
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>(0);
+  
+  // File Input Ref
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Generate QR on mount
   useEffect(() => {
@@ -106,6 +109,54 @@ export const SyncModal: React.FC<SyncModalProps> = ({ tasks, onImport, onClose }
     animationRef.current = requestAnimationFrame(tick);
   };
 
+  const handleDownloadBackup = () => {
+    try {
+        const now = new Date();
+        // Format: YYYY-MM-DD_HH-MM-SS
+        const timestamp = now.toISOString().replace(/T/, '_').replace(/\..+/, '').replace(/:/g, '-');
+        const fileName = `eisenflow_backup_${timestamp}.json`;
+        
+        const dataStr = JSON.stringify(tasks, null, 2);
+        const blob = new Blob([dataStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    } catch (e) {
+        console.error("Export failed", e);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        try {
+            const result = event.target?.result as string;
+            const parsed = JSON.parse(result);
+            if (Array.isArray(parsed)) {
+                onImport(parsed);
+                setScanError(null);
+            } else {
+                setScanError("Invalid file. File must contain a list of tasks.");
+            }
+        } catch (err) {
+            console.error(err);
+            setScanError("Failed to parse JSON file.");
+        }
+    };
+    reader.readAsText(file);
+    // Reset so same file can be selected again
+    e.target.value = '';
+  };
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in">
       <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl shadow-2xl flex flex-col overflow-hidden max-h-[90vh]">
@@ -113,7 +164,7 @@ export const SyncModal: React.FC<SyncModalProps> = ({ tasks, onImport, onClose }
         {/* Header */}
         <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
             <h3 className="font-bold text-lg dark:text-white flex items-center gap-2">
-                <QrCode className="text-indigo-500" /> Device Sync
+                <Share2 className="text-indigo-500" size={20} /> Sync & Backup
             </h3>
             <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
                 <X size={20} />
@@ -127,81 +178,138 @@ export const SyncModal: React.FC<SyncModalProps> = ({ tasks, onImport, onClose }
                 className={cn(
                     "flex-1 py-2 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all",
                     activeTab === 'export' 
-                        ? "bg-white dark:bg-slate-800 text-indigo-600 shadow-sm" 
+                        ? "bg-white dark:bg-slate-800 text-indigo-600 shadow-sm ring-1 ring-slate-200 dark:ring-slate-700" 
                         : "text-slate-400 hover:text-slate-600 dark:text-slate-500"
                 )}
             >
-                <QrCode size={16} /> Show QR
+                <Download size={16} /> Export
             </button>
             <button 
                 onClick={() => setActiveTab('import')}
                 className={cn(
                     "flex-1 py-2 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all",
                     activeTab === 'import' 
-                        ? "bg-white dark:bg-slate-800 text-indigo-600 shadow-sm" 
+                        ? "bg-white dark:bg-slate-800 text-indigo-600 shadow-sm ring-1 ring-slate-200 dark:ring-slate-700" 
                         : "text-slate-400 hover:text-slate-600 dark:text-slate-500"
                 )}
             >
-                <Camera size={16} /> Scan QR
+                <Upload size={16} /> Import
             </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 flex flex-col items-center justify-center min-h-[300px]">
+        <div className="flex-1 overflow-y-auto p-6 flex flex-col items-center justify-start gap-6 min-h-[300px]">
             
             {activeTab === 'export' && (
-                <div className="flex flex-col items-center gap-6 text-center animate-in zoom-in-95">
-                    <div className="bg-white p-4 rounded-xl shadow-lg border-4 border-slate-100 dark:border-slate-800">
-                        {qrData ? (
-                            <div style={{ height: "auto", margin: "0 auto", maxWidth: 200, width: "100%" }}>
-                                <QRCode
-                                    size={256}
-                                    style={{ height: "auto", maxWidth: "100%", width: "100%" }}
-                                    value={qrData}
-                                    viewBox={`0 0 256 256`}
-                                />
-                            </div>
-                        ) : (
-                            <div className="w-[200px] h-[200px] bg-slate-100 flex items-center justify-center text-slate-400">
-                                Generating...
-                            </div>
+                <div className="flex flex-col items-center gap-6 w-full animate-in zoom-in-95">
+                    
+                    {/* QR Section */}
+                    <div className="flex flex-col items-center gap-3 w-full">
+                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Option 1: QR Code</h4>
+                        <div className="bg-white p-4 rounded-xl shadow-lg border-4 border-slate-100 dark:border-slate-800">
+                            {qrData ? (
+                                <div style={{ height: "auto", margin: "0 auto", maxWidth: 180, width: "100%" }}>
+                                    <QRCode
+                                        size={256}
+                                        style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                                        value={qrData}
+                                        viewBox={`0 0 256 256`}
+                                    />
+                                </div>
+                            ) : (
+                                <div className="w-[180px] h-[180px] bg-slate-100 flex items-center justify-center text-slate-400">
+                                    Generating...
+                                </div>
+                            )}
+                        </div>
+                        {qrData.length > 2000 && (
+                           <div className="flex items-center gap-2 text-[10px] text-amber-600 bg-amber-50 dark:bg-amber-900/20 px-3 py-2 rounded-lg max-w-[250px]">
+                               <AlertTriangle size={12} />
+                               Large data set. Scanning may be slow. Use File Backup for better reliability.
+                           </div>
                         )}
                     </div>
-                    <div>
-                        <p className="text-sm font-medium text-slate-900 dark:text-white">Scan this with another device</p>
-                        <p className="text-xs text-slate-500 mt-1 max-w-[250px] mx-auto">
-                            Use the "Scan QR" tab on your other device to transfer these tasks instantly.
-                        </p>
+
+                    <div className="w-full flex items-center gap-4 px-4">
+                        <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1" />
+                        <span className="text-xs font-bold text-slate-400">OR</span>
+                        <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1" />
                     </div>
-                    {qrData.length > 2500 && (
-                        <div className="flex items-center gap-2 text-[10px] text-amber-600 bg-amber-50 dark:bg-amber-900/20 px-3 py-2 rounded-lg">
-                            <AlertTriangle size={12} />
-                            Data is large. Scanning might take a moment.
-                        </div>
-                    )}
+
+                    {/* File Section */}
+                    <div className="flex flex-col items-center gap-3 w-full">
+                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Option 2: Backup File</h4>
+                        <button 
+                            onClick={handleDownloadBackup}
+                            className="w-full flex items-center justify-center gap-3 bg-indigo-50 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 p-4 rounded-xl transition-colors border border-indigo-200 dark:border-indigo-800 border-dashed"
+                        >
+                            <FileJson size={24} />
+                            <div className="text-left">
+                                <div className="font-bold text-sm">Download JSON Backup</div>
+                                <div className="text-[10px] opacity-70">eisenflow_backup_DATE.json</div>
+                            </div>
+                        </button>
+                    </div>
                 </div>
             )}
 
             {activeTab === 'import' && (
-                <div className="flex flex-col items-center gap-4 w-full animate-in zoom-in-95">
-                    <div className="relative w-full aspect-square max-w-[280px] bg-black rounded-2xl overflow-hidden shadow-lg border-4 border-slate-100 dark:border-slate-800">
-                        {!scanError ? (
-                            <>
-                                <video ref={videoRef} className="absolute inset-0 w-full h-full object-cover" />
-                                <canvas ref={canvasRef} className="hidden" />
-                                <div className="absolute inset-0 border-[30px] border-black/30 z-10 flex items-center justify-center">
-                                    <div className="w-full h-0.5 bg-red-500/50 absolute top-1/2 animate-pulse shadow-[0_0_10px_rgba(255,0,0,0.5)]" />
+                <div className="flex flex-col items-center gap-6 w-full animate-in zoom-in-95">
+                     
+                     {/* Camera Section */}
+                     <div className="flex flex-col items-center gap-3 w-full">
+                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Option 1: Scan QR</h4>
+                        <div className="relative w-full aspect-square max-w-[240px] bg-black rounded-2xl overflow-hidden shadow-lg border-4 border-slate-100 dark:border-slate-800">
+                            {!scanError ? (
+                                <>
+                                    <video ref={videoRef} className="absolute inset-0 w-full h-full object-cover" />
+                                    <canvas ref={canvasRef} className="hidden" />
+                                    <div className="absolute inset-0 border-[30px] border-black/30 z-10 flex items-center justify-center">
+                                        <div className="w-full h-0.5 bg-red-500/50 absolute top-1/2 animate-pulse shadow-[0_0_10px_rgba(255,0,0,0.5)]" />
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center h-full text-slate-500 gap-2 p-4 text-center bg-slate-50 dark:bg-slate-900">
+                                    <Camera size={32} className="opacity-50" />
+                                    <span className="text-xs text-rose-500">{scanError}</span>
+                                    <button 
+                                        onClick={() => setScanError(null)}
+                                        className="text-[10px] underline text-indigo-500"
+                                    >
+                                        Try again
+                                    </button>
                                 </div>
-                            </>
-                        ) : (
-                            <div className="flex flex-col items-center justify-center h-full text-slate-500 gap-2 p-4 text-center">
-                                <Camera size={32} className="opacity-50" />
-                                <span className="text-xs">{scanError}</span>
-                            </div>
-                        )}
+                            )}
+                        </div>
+                     </div>
+
+                    <div className="w-full flex items-center gap-4 px-4">
+                        <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1" />
+                        <span className="text-xs font-bold text-slate-400">OR</span>
+                        <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1" />
                     </div>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 text-center">
-                        Point camera at the QR code generated on your other device.
-                    </p>
+
+                    {/* File Upload Section */}
+                    <div className="flex flex-col items-center gap-3 w-full">
+                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Option 2: Upload File</h4>
+                        <input 
+                            type="file" 
+                            accept=".json" 
+                            ref={fileInputRef} 
+                            onChange={handleFileSelect} 
+                            className="hidden" 
+                        />
+                        <button 
+                            onClick={() => fileInputRef.current?.click()}
+                            className="w-full flex items-center justify-center gap-3 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 p-4 rounded-xl transition-colors border border-emerald-200 dark:border-emerald-800 border-dashed"
+                        >
+                            <Upload size={24} />
+                            <div className="text-left">
+                                <div className="font-bold text-sm">Select Backup File</div>
+                                <div className="text-[10px] opacity-70">Restores tasks from JSON</div>
+                            </div>
+                        </button>
+                    </div>
+
                 </div>
             )}
         </div>
